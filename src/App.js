@@ -6,6 +6,7 @@ import HomePage from "./pages/Home";
 import LandPage from "./pages/Land";
 import ClimatePage from "./pages/Climate";
 import AgriculturePage from "./pages/Agriculture";
+import AdminPage from "./pages/Admin";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
               <Route path="/land" element={<LandPage />} />
               <Route path="/climate" element={<ClimatePage />} />
               <Route path="/agriculture" element={<AgriculturePage />} />
+              <Route path='/admin' element={<AdminPage />} />
             </Routes>
           </main>
         </div>

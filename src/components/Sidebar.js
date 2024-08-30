@@ -65,7 +65,13 @@ export function Sidebar() {
             >
               Agriculture
             </SidebarItem>
-            {/* Additional items */}
+            <SidebarItem
+              href="/admin"
+              icon={<ServerIcon className="h-5 w-5" />}
+              isActive={location.pathname === '/admin'}
+            >
+              Admin
+            </SidebarItem>
           </ul>
         </div>
       </div>
