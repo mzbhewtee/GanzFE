@@ -7,6 +7,7 @@ import {
   Bars3Icon,
   XMarkIcon,
   HomeIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 
 export function Sidebar() {
@@ -67,7 +68,7 @@ export function Sidebar() {
             </SidebarItem>
             <SidebarItem
               href="/admin"
-              icon={<ServerIcon className="h-5 w-5" />}
+              icon={<GlobeAltIcon className="h-5 w-5" />}
               isActive={location.pathname === '/admin'}
             >
               Admin
