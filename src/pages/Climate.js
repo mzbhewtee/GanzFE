@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
@@ -6,28 +6,29 @@ import { CSVLink } from 'react-csv';
 import { Helmet } from 'react-helmet';
 
 const ClimatePage = () => {
-    const [climateData, setclimateData] = useState([]);
-    const [country, setCountry] = useState('');
+    const [climateData, setClimateData] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const rowsPerPage = 200;
+    const [activeGraph, setActiveGraph] = useState('line');
+    const chartRef = useRef();
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCountry, setSelectedCountry] = useState(''); // State for selected country
+    const countries = climateData.map(item => ({
+        name: item["Country_Name"],
+        code: item["Country_Code"]
+    }));
 
-    const countries = [
-        { value: 'climate_rwanda', label: 'Rwanda' },
-        { value: 'climate_nigeria', label: 'Nigeria' },
-        { value: 'climate_kenya', label: 'Kenya' },
-        { value: 'climate_southafrica', label: 'South Africa' },
-        { value: 'climate_data', label: 'Africa' }
-    ];
-
-    const fetchData = async (selectedCountry) => {
+    const fetchData = async () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await axios.get(`https://ganzbe.onrender.com/climate/${selectedCountry}`);
-            const sortedData = response.data.sort((a, b) => a.Year - b.Year);
-            setclimateData(sortedData || []);
+            const response = await axios.get('https://ganzbe.onrender.com/table-data/methane_emissions_change_from_1990');
+            setClimateData(response.data || []);
+            if (response.data.length > 0) {
+                setSelectedCountry(response.data[0]["Country_Code"]); // Default to the first country
+            }
         } catch (error) {
             setError('Error fetching data');
             console.error(error);
@@ -35,50 +36,100 @@ const ClimatePage = () => {
             setLoading(false);
         }
     };
-
-    const handleCountryChange = (e) => {
-        setCountry(e.target.value);
-    };
-
-    const handleFetchData = () => {
-        if (country) {
-            fetchData(country);
-        }
-    };
+    useEffect(() => {
+        fetchData();
+    }, []);
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const currentRows = climateData.slice(indexOfFirstRow, indexOfLastRow);
+    const years = currentRows.length > 0
+        ? Object.keys(currentRows[0])
+            .filter(key => key.startsWith('Year_'))
+            .map(year => year.split('_')[1])
+            .filter(year => parseInt(year) >= 1961) // Keep only years from 1961 onwards
+        : [];
 
-    const handlePageChange = (pageNumber) => {
-        setCurrentPage(pageNumber);
+
+    const calculateWorldData = () => {
+        const yearTotals = {};
+        const yearCounts = {};
+
+        years.forEach(year => {
+            yearTotals[year] = 0;
+            yearCounts[year] = 0;
+        });
+
+        climateData.forEach(item => {
+            years.forEach(year => {
+                const value = Number(item[`Year_${year}`]) || 0;
+                if (value > 0) {
+                    yearTotals[year] += value;
+                    yearCounts[year] += 1;
+                }
+            });
+        });
+
+        return years.map(year => (yearCounts[year] > 0 ? (yearTotals[year] / yearCounts[year]) : 0));
     };
 
-    const totalPages = Math.ceil(climateData.length / rowsPerPage);
 
-    // Find the maximum value in the dataset
-    const maxValue = Math.max(...climateData.map(item => item["Value"]));
 
-    // Normalize the data to range from 0 to 100
-    const normalizedData = currentRows.map(item => ({
-        ...item,
-        NormalizedValue: (item["Value"] / maxValue) * 100
-    }));
+    const lineChartData = () => {
+        const dataPoints = selectedCountry
+            ? calculateCountryData() // Calculate for selected country
+            : calculateWorldData(); // Calculate for world
 
-    const lineChartData = {
-        labels: normalizedData.map(item => item["Year"]),
-        datasets: [
-            {
-                label: 'climate Value (Normalized)',
-                data: normalizedData.map(item => item["NormalizedValue"]),
+        const buffer = 1;
+        const minValue = Math.min(...dataPoints) - buffer
+        const maxValue = Math.max(...dataPoints) + buffer;
+        const stepSize = (maxValue - minValue) / 5;
+
+        return {
+            labels: years,
+            datasets: [{
+                label: 'Years',
+                data: dataPoints,
                 borderColor: '#36A2EB',
                 backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                fill: true,
+                fill: false,
                 tension: 0.4,
-            },
-        ],
+            }],
+            yAxis: { minValue, maxValue, stepSize },
+        };
     };
 
+    const calculateCountryData = () => {
+        const yearTotals = {};
+        const yearCounts = {};
+        const selectedCountryData = climateData.find(item => item["Country_Code"] === selectedCountry);
+
+        years.forEach(year => {
+            yearTotals[year] = 0;
+            yearCounts[year] = 0;
+        });
+
+        if (selectedCountryData) {
+            years.forEach(year => {
+                const value = Number(selectedCountryData[`Year_${year}`]) || 0;
+                if (value > 0) {
+                    yearTotals[year] += value;
+                    yearCounts[year] += 1;
+                }
+            });
+        }
+
+        return years.map(year => (yearCounts[year] > 0 ? (yearTotals[year] / yearCounts[year]) : 0));
+    };
+
+    const { labels, datasets, yAxis } = lineChartData();
+
+    const handleCountryChange = (event) => {
+        setSelectedCountry(event.target.value);
+    };
+
+
+    // Chart options using the dynamic y-axis values
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: false,
@@ -90,9 +141,9 @@ const ClimatePage = () => {
             tooltip: {
                 callbacks: {
                     label: (context) => {
-                        const label = context.label || '';
+                        const label = context.dataset.label || '';
                         const value = context.raw || 0;
-                        return `${label}: ${value.toFixed(2)}`;
+                        return `${label}: ${value.toFixed(2)}%`;
                     },
                 },
             },
@@ -100,8 +151,11 @@ const ClimatePage = () => {
         scales: {
             x: {
                 title: {
-                    display: true,
+                    display: false,
                     text: 'Year',
+                },
+                grid: {
+                    display: false, // No vertical grid lines
                 },
                 ticks: {
                     autoSkip: true,
@@ -113,13 +167,74 @@ const ClimatePage = () => {
             y: {
                 title: {
                     display: true,
-                    text: 'Value (0-100)',
+                    text: 'Percentage (%)',
                 },
-                min: 0,
-                max: 100,
+                min: yAxis.minValue, // Use the dynamic min value
+                max: yAxis.maxValue, // Use the dynamic max value
+                ticks: {
+                    stepSize: yAxis.stepSize, // Use the dynamic step size
+                },
+                grid: {
+                    display: true,
+                    color: 'rgba(200, 200, 200, 0.5)', // Color of grid lines
+                },
             },
         },
     };
+
+    // In the render section:
+    <Line ref={chartRef} data={{ labels, datasets }} options={chartOptions} />
+
+    const Modal = ({ isOpen, onClose, children }) => {
+        if (!isOpen) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+                <div className="bg-white rounded-lg p-6 max-w-lg mx-auto relative">
+                    <button
+                        onClick={onClose}
+                        className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+                    >
+                        &times;
+                    </button>
+                    {children}
+                </div>
+            </div>
+        );
+    };
+
+    const handleShowDetails = () => {
+        setIsModalOpen(true);  // Modal opening action
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false); // Modal closing action
+    };
+
+    const handlePageChange = (page) => {
+        if (page > 0 && page <= Math.ceil(climateData.length / rowsPerPage)) {
+            setCurrentPage(page);
+        }
+    };
+
+    const handleLineClick = () => {
+        setActiveGraph('line');
+    };
+
+    const handleMapClick = () => {
+        setActiveGraph('map');
+    };
+
+    const downloadGraph = () => {
+        const chart = chartRef.current;
+        if (chart) {
+            const link = document.createElement('a');
+            link.href = chart.toBase64Image();
+            link.download = `${selectedCountry}_line_graph.png`; // Use selected country in the filename
+            link.click();
+        }
+    };
+
 
     return (
         <>
@@ -128,59 +243,89 @@ const ClimatePage = () => {
             </Helmet>
             <div className="flex flex-col md:flex-row">
                 <div className="flex-1 p-4 md:p-8">
-                    <h1 className="text-2xl font-bold mb-4">Climate Data</h1>
-
-                    <div className="mb-4">
-                        <label htmlFor="country" className="block text-sm font-medium text-gray-700">Select Country:</label>
-                        <select
-                            id="country"
-                            name="country"
-                            value={country}
-                            onChange={handleCountryChange}
-                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm"
-                        >
-                            <option value="">-- Select a Country --</option>
-                            {countries.map((country) => (
-                                <option key={country.value} value={country.value}>
-                                    {country.label}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <button
-                        onClick={handleFetchData}
-                        disabled={!country || loading}
-                        className="px-4 py-2 bg-green-900 text-white rounded hover:bg-green-600 disabled:bg-gray-300"
-                    >
-                        {loading ? 'Loading...' : 'Fetch Data'}
-                    </button>
+                    <h1 className="text-2xl font-bold mb-4">Methane emissions (% change from 1990)</h1>
+                    <p className='text-sm text-gray-400 mb-4'>World Bank staff estimates from original source: European Commission, Joint Research Centre ( JRC )/Netherlands Environmental Assessment Agency ( PBL ). Emission Database for Global Atmospheric Research ( EDGAR ): edgar.jrc.ec.europa.eu.</p>
 
                     {error && <div className="text-red-500 mt-4">{error}</div>}
 
                     {climateData.length > 0 && !loading && (
                         <>
-                            <div className="bg-gray-100 p-4 mt-5 rounded-md mb-8 shadow-md">
-                                <h2 className="text-xl font-semibold mb-2">Dataset Metadata</h2>
-                                <p><strong>Source:</strong> <a href="https://www.fao.org/faostat/en/#data/QV" className="text-blue-500" target="_blank" rel="noopener noreferrer">https://www.fao.org/faostat/en/#data/QV</a></p>
-                                <p><strong>Last Updated:</strong> 2024-08-18</p>
-                                <p><strong>Description:</strong> This dataset contains agricultural production data including values for various crops over time.</p>
-                                <p><strong>Title:</strong> Value of Agricultural Production</p>
-                                <h3 className="text-lg font-semibold mt-4">Columns:</h3>
-                                <ul className="list-disc list-inside mt-2">
-                                    <li><strong>Element:</strong> The element or type of data being recorded.</li>
-                                    <li><strong>Year:</strong> The year the data was recorded.</li>
-                                    <li><strong>Value:</strong> The recorded value of agricultural production.</li>
-                                    <li><strong>Unit:</strong> The unit of measurement for the value.</li>
-                                </ul>
-                                <p className="mt-4"><strong>Notes:</strong> Data is sourced from agricultural records. Ensure to verify with the original source for the most recent updates.</p>
+                            <div className="mb-4">
+                                <label className="mr-2" htmlFor="country-selector">Select Country:</label>
+                                <select
+                                    id="country-selector"
+                                    value={selectedCountry}
+                                    onChange={handleCountryChange}
+                                    className="border rounded p-2"
+                                >
+                                    <option value="">World</option> {/* Default option for World */}
+                                    {countries.map(country => (
+                                        <option key={country.code} value={country.code}>
+                                            {country.name}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
-
-                            <div className="mb-8">
-                                <h2 className="text-xl font-semibold mb-2">Climate Value Over Time</h2>
-                                <div className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] mb-4">
-                                    <Line data={lineChartData} options={chartOptions} />
+                            {years.length > 0 && (
+                                <div className="mb-8">
+                                    <div className="bg-white rounded-lg shadow-md p-10">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center mb-4">
+                                                <p onClick={handleLineClick} className={`cursor-pointer mr-4 font-bold relative ${activeGraph === 'line' ? 'text-green-500' : ''}`}>
+                                                    Line
+                                                    {activeGraph === 'line' && <span className="absolute left-0 bottom-[-5px] w-full h-[2px] bg-green-500" />}
+                                                </p>
+                                                <p onClick={handleMapClick} className={`cursor-pointer font-bold relative ${activeGraph === 'map' ? 'text-green-500' : ''}`}>
+                                                    Map
+                                                    {activeGraph === 'map' && <span className="absolute left-0 bottom-[-5px] w-full h-[2px] bg-green-500" />}
+                                                </p>
+                                            </div>
+                                            <div className="flex justify-between ml-4">
+                                                <button onClick={downloadGraph} className="mr-4 font-bold">
+                                                    Download
+                                                </button>
+                                                <button onClick={handleShowDetails} className="font-bold">
+                                                    Show Details
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] mb-4">
+                                            {activeGraph === 'line' ? (
+                                                <Line ref={chartRef} data={lineChartData()} options={chartOptions} />
+                                            ) : (
+                                                <div className="h-full flex justify-center items-center">
+                                                    <p className="text-gray-500">Map will be displayed here.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+                                <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                                    <div className="bg-white w-11/12 md:w-2/3 lg:w-1/2 max-h-[80vh] rounded-lg shadow-lg overflow-y-auto p-6 mt-24 relative"> {/* Added "relative" for positioning */}
+
+                                        {/* Close button */}
+                                        <button
+                                            onClick={handleCloseModal}
+                                            className="absolute top-4 right-4 text-md text-gray-500 hover:text-gray-800"
+                                        >
+                                            &times;
+                                        </button>
+
+                                        <h2 className="text-xl font-bold mb-2">Methane emissions (% change from 1990)</h2>
+                                        <p className="mb-4">
+                                            Methane emissions are those stemming from human activities such as agriculture and from industrial methane production. Each year of data shows the percentage change to that year from 1990.
+                                        </p>
+                                        <p><strong>ID:</strong> EN.ATM.METH.ZG</p>
+                                        <p><strong>Source:</strong> World Bank staff estimates from original source: European Commission, Joint Research Centre ( JRC )/Netherlands Environmental Assessment Agency ( PBL ). Emission Database for Global Atmospheric</p>
+                                        <p>Research ( EDGAR ): <a href="https://edgar.jrc.ec.europa.eu" target="_blank" rel="noopener noreferrer" className="text-blue-500">edgar.jrc.ec.europa.eu</a></p>
+                                        <p><strong>All Metadata:</strong> <a href="https://databank.worldbank.org/reports.aspx?source=2&type=metadata&series=AG.LND.AGRI.ZS&_gl=1*1akcz9f*_gcl_au*MjAwMjIyNTU4Ny4xNzI2MjkzOTg2" target="_blank" rel="noopener noreferrer" className="text-blue-500">View Full Metadata</a></p>
+                                    </div>
+                                </div>
+                            </Modal>
+
 
                             <div className="mb-8">
                                 <h2 className="text-xl font-semibold mb-2">Data Table</h2>
@@ -190,21 +335,23 @@ const ClimatePage = () => {
                                             <table className="min-w-full divide-y divide-gray-200">
                                                 <thead className="bg-gray-50">
                                                     <tr>
-                                                        <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Element</th>
-                                                        <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year</th>
-                                                        <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Unit</th>
-                                                        <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Value</th>
-                                                        <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Normalized Value</th>
+                                                        <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country Name</th>
+                                                        <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Country Code</th>
+                                                        <th className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Indicator Name</th>
+                                                        {years.map(year => (
+                                                            <th key={year} className="px-2 md:px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Year {year}</th>
+                                                        ))}
                                                     </tr>
                                                 </thead>
                                                 <tbody className="bg-white divide-y divide-gray-200">
-                                                    {normalizedData.map((item, index) => (
+                                                    {currentRows.map((item, index) => (
                                                         <tr key={index}>
-                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Element"]}</td>
-                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Year"]}</td>
-                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Unit"]}</td>
-                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Value"]}</td>
-                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["NormalizedValue"].toFixed(2)}</td>
+                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Country_Name"]}</td>
+                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Country_Code"]}</td>
+                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Indicator_Name"]}</td>
+                                                            {years.map(year => (
+                                                                <td key={year} className="px-2 md:px-4 py-2 whitespace-nowrap">{item[`Year_${year}`] || 0}</td>
+                                                            ))}
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -225,7 +372,7 @@ const ClimatePage = () => {
                                     </button>
                                     <button
                                         onClick={() => handlePageChange(currentPage + 1)}
-                                        disabled={currentPage === totalPages}
+                                        disabled={currentPage === Math.ceil(climateData.length / rowsPerPage)}
                                         className="px-4 py-2 bg-green-900 text-white rounded hover:bg-green-600 disabled:bg-gray-300"
                                     >
                                         Next
@@ -233,13 +380,24 @@ const ClimatePage = () => {
                                 </div>
                                 <CSVLink
                                     data={climateData}
-                                    filename={`climate_data_${country}.csv`}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-800"
+                                    filename={"climate_data.csv"}
+                                    className="px-4 py-2 bg-blue-900 text-white rounded hover:bg-blue-600"
                                 >
                                     Download CSV
                                 </CSVLink>
                             </div>
                         </>
+                    )}
+
+
+                    {loading && (
+                        <div className="flex justify-center items-center h-64">
+                            <div className="spinner-border animate-spin inline-block w-8 h-8 border-4 rounded-full" role="status"></div>
+                        </div>
+                    )}
+
+                    {!loading && climateData.length === 0 && (
+                        <p>No data available at the moment.</p>
                     )}
                 </div>
             </div>

@@ -20,7 +20,7 @@ export function Sidebar() {
     <>
       {/* Burger Menu Button */}
       <button
-        className="fixed top-32 right-4 z-50 p-2 bg-green-900 bg-opacity-50 rounded-md md:hidden"
+        className="fixed top-24 right-4 z-50 p-2 bg-green-900 bg-opacity-50 rounded-md md:hidden"
         onClick={toggleDrawer}
       >
         {isDrawerOpen ? (
