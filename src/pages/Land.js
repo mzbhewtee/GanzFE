@@ -10,7 +10,7 @@ function LandPage() {
     const pieChartRef2 = useRef(null); // Ref for Parcel Count Pie Chart
 
     useEffect(() => {
-        axios.get('http://localhost:5000/land')
+        axios.get('https://ganzbe.onrender.com/table-data/landuseoverview_rwanda')
             .then(response => {
                 setData(response.data);
             })
@@ -169,7 +169,7 @@ function LandPage() {
                 </div>
             </main>
         </div>
-        
+
     );
 }
 
