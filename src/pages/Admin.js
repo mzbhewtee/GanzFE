@@ -164,26 +164,37 @@ function AdminPage() {
         }
     
         console.log('Uploading file:', file);
-    
-        const formData = new FormData();
-        formData.append('file', file);
-    
-        setLoading(true);
-        try {
-            await axios.post(`https://ganzbe.onrender.com/upload/${selectedTable}`, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data',
+        
+        const reader = new FileReader();
+        
+        reader.onload = async (e) => {
+            const csvData = e.target.result;
+            Papa.parse(csvData, {
+                header: true,
+                skipEmptyLines: true,
+                complete: async (results) => {
+                    try {
+                        // Send the parsed data to the backend
+                        await axios.post(`https://ganzbe.onrender.com/upload/${selectedTable}`, {
+                            data: results.data
+                        });
+                        toast.success('Data uploaded successfully!');
+                        fetchTableData(selectedTable); // Refresh table data after upload
+                    } catch (error) {
+                        console.error('Error uploading data:', error);
+                        toast.error('Failed to upload data.');
+                    }
+                },
+                error: (error) => {
+                    console.error('Error parsing CSV:', error);
+                    toast.error('Failed to parse CSV file.');
                 }
             });
-            toast.success('Data uploaded successfully!');
-            fetchTableData(selectedTable); // Refresh table data after upload
-        } catch (error) {
-            console.error('Error uploading data:', error);
-            toast.error('Failed to upload data.');
-        } finally {
-            setLoading(false);
-        }
+        };
+    
+        reader.readAsText(file);
     };
+    
     
     return (
         <div className="max-w-4xl mx-auto p-4">
@@ -321,7 +332,7 @@ function AdminPage() {
                 <h2 className="text-2xl font-semibold mb-4">Upload Data</h2>
                 <input
                     type="file"
-                    accept=".csv"
+                    accept=".sql,.csv"
                     onChange={handleFileChange}
                     className="mb-4"
                 />

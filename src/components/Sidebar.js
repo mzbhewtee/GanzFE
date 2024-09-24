@@ -20,19 +20,19 @@ export function Sidebar() {
     <>
       {/* Burger Menu Button */}
       <button
-        className="fixed top-24 right-4 z-50 p-2 bg-green-900 bg-opacity-50 rounded-md md:hidden"
+        className="fixed top-28 right-4 z-50 p-2 bg-black rounded-md md:hidden"
         onClick={toggleDrawer}
       >
         {isDrawerOpen ? (
-          <XMarkIcon className="h-6 w-6 text-gray-600" />
+          <XMarkIcon className="h-6 w-6 text-white" />
         ) : (
-          <Bars3Icon className="h-6 w-6 text-gray-600" />
+          <Bars3Icon className="h-6 w-6 text-white" />
         )}
       </button>
 
       {/* Sidebar Drawer */}
       <div
-        className={`fixed inset-y-0 left-0 z-40 w-64 bg-gray-800 text-white transition-transform ${
+        className={`fixed top-24 inset-y-0 left-0 z-40 w-64 bg-gray-800 text-white transition-transform ${
           isDrawerOpen ? 'translate-x-0' : '-translate-x-full'
         } md:translate-x-0 md:relative md:w-64 md:bg-white md:text-gray-900 md:shadow-md top-32`}
       >
@@ -66,13 +66,7 @@ export function Sidebar() {
             >
               Agriculture
             </SidebarItem>
-            <SidebarItem
-              href="/admin"
-              icon={<GlobeAltIcon className="h-5 w-5" />}
-              isActive={location.pathname === '/admin'}
-            >
-              Admin
-            </SidebarItem>
+            
           </ul>
         </div>
       </div>

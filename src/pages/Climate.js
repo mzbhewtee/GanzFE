@@ -4,6 +4,7 @@ import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { CSVLink } from 'react-csv';
 import { Helmet } from 'react-helmet';
+import MapComponent from '../components/Map';
 
 const ClimatePage = () => {
     const [climateData, setClimateData] = useState([]);
@@ -241,24 +242,24 @@ const ClimatePage = () => {
             <Helmet>
                 <title>Climate Data</title>
             </Helmet>
-            <div className="flex flex-col md:flex-row">
-                <div className="flex-1 p-4 md:p-8">
-                    <h1 className="text-2xl font-bold mb-4">Methane emissions (% change from 1990)</h1>
-                    <p className='text-sm text-gray-400 mb-4'>World Bank staff estimates from original source: European Commission, Joint Research Centre ( JRC )/Netherlands Environmental Assessment Agency ( PBL ). Emission Database for Global Atmospheric Research ( EDGAR ): edgar.jrc.ec.europa.eu.</p>
+            <div className="w-full p-5 md:p-0">
+                <div className="flex-1">
+                    <h1 className="text-xl sm:text-2xl font-bold md:mb-3 mt-10">Methane emissions (% change from 1990)</h1>
+                    <p className='text-sm sm:text-base text-gray-400 mb-8'>World Bank staff estimates from original source: European Commission, Joint Research Centre ( JRC )/Netherlands Environmental Assessment Agency ( PBL ). Emission Database for Global Atmospheric Research ( EDGAR ): edgar.jrc.ec.europa.eu.</p>
 
                     {error && <div className="text-red-500 mt-4">{error}</div>}
 
                     {climateData.length > 0 && !loading && (
                         <>
                             <div className="mb-4">
-                                <label className="mr-2" htmlFor="country-selector">Select Country:</label>
+                                <label className="mr-2 text-sm sm:text-base mb-8" htmlFor="country-selector">Select Country:</label>
                                 <select
                                     id="country-selector"
                                     value={selectedCountry}
                                     onChange={handleCountryChange}
                                     className="border rounded p-2"
                                 >
-                                    <option value="">World</option> {/* Default option for World */}
+                                    <option value="">World</option>
                                     {countries.map(country => (
                                         <option key={country.code} value={country.code}>
                                             {country.name}
@@ -267,37 +268,38 @@ const ClimatePage = () => {
                                 </select>
                             </div>
                             {years.length > 0 && (
-                                <div className="mb-8">
-                                    <div className="bg-white rounded-lg shadow-md p-10">
+                                <div className="pd-10">
+                                    <div className="bg-white overflow-x-hidden rounded-lg shadow-md p-10 ">
                                         <div className="flex items-center justify-between mb-4">
                                             <div className="flex items-center mb-4">
-                                                <p onClick={handleLineClick} className={`cursor-pointer mr-4 font-bold relative ${activeGraph === 'line' ? 'text-green-500' : ''}`}>
+                                                <p onClick={handleLineClick} className={`cursor-pointer mr-4 text-sm sm:text-base font-bold relative ${activeGraph === 'line' ? 'text-green-500' : ''}`}>
                                                     Line
                                                     {activeGraph === 'line' && <span className="absolute left-0 bottom-[-5px] w-full h-[2px] bg-green-500" />}
                                                 </p>
-                                                <p onClick={handleMapClick} className={`cursor-pointer font-bold relative ${activeGraph === 'map' ? 'text-green-500' : ''}`}>
+                                                <p onClick={handleMapClick} className={`cursor-pointer text-sm sm:text-base font-bold relative ${activeGraph === 'map' ? 'text-green-500' : ''}`}>
                                                     Map
                                                     {activeGraph === 'map' && <span className="absolute left-0 bottom-[-5px] w-full h-[2px] bg-green-500" />}
                                                 </p>
                                             </div>
                                             <div className="flex justify-between ml-4">
-                                                <button onClick={downloadGraph} className="mr-4 font-bold">
+                                                <button onClick={downloadGraph} className="mr-4 text-sm sm:text-base font-bold">
                                                     Download
                                                 </button>
-                                                <button onClick={handleShowDetails} className="font-bold">
+                                                <button onClick={handleShowDetails} className="text-sm sm:text-base font-bold">
                                                     Show Details
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] mb-4">
+                                        <div className="relative z-0 w-full h-[300px] md:h-[400px] lg:h-[500px] mb-4">
                                             {activeGraph === 'line' ? (
                                                 <Line ref={chartRef} data={lineChartData()} options={chartOptions} />
                                             ) : (
-                                                <div className="h-full flex justify-center items-center">
-                                                    <p className="text-gray-500">Map will be displayed here.</p>
-                                                </div>
+                                                <div className="h-full overflow-auto">
+                                                <MapComponent theData={climateData} />
+                                            </div>
                                             )}
                                         </div>
+
                                     </div>
                                 </div>
                             )}
@@ -328,8 +330,8 @@ const ClimatePage = () => {
 
 
                             <div className="mb-8">
-                                <h2 className="text-xl font-semibold mb-2">Data Table</h2>
-                                <div className="bg-white shadow-md rounded-lg p-4 max-w-4xl mx-auto">
+                                <h2 className="text-sm sm:text- overflow-x-hidden font-semibold mb-2 mt-5">Data Table</h2>
+                                <div className="bg-white shadow-md rounded-lg p-4 w-[450px] md:w-[500px] max-w-4xl mx-auto">
                                     <div className="overflow-x-auto">
                                         <div className="max-h-[400px] overflow-y-auto">
                                             <table className="min-w-full divide-y divide-gray-200">
@@ -346,11 +348,11 @@ const ClimatePage = () => {
                                                 <tbody className="bg-white divide-y divide-gray-200">
                                                     {currentRows.map((item, index) => (
                                                         <tr key={index}>
-                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Country_Name"]}</td>
-                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Country_Code"]}</td>
-                                                            <td className="px-2 md:px-4 py-2 whitespace-nowrap">{item["Indicator_Name"]}</td>
+                                                            <td className="px-2 md:px-4 py-2 text-sm sm:text-base whitespace-nowrap">{item["Country_Name"]}</td>
+                                                            <td className="px-2 md:px-4 py-2 text-sm sm:text-base whitespace-nowrap">{item["Country_Code"]}</td>
+                                                            <td className="px-2 md:px-4 py-2 text-sm sm:text-base whitespace-nowrap">{item["Indicator_Name"]}</td>
                                                             {years.map(year => (
-                                                                <td key={year} className="px-2 md:px-4 py-2 whitespace-nowrap">{item[`Year_${year}`] || 0}</td>
+                                                                <td key={year} className="px-2 text-sm sm:text-base md:px-4 py-2 whitespace-nowrap">{item[`Year_${year}`] || 0}</td>
                                                             ))}
                                                         </tr>
                                                     ))}

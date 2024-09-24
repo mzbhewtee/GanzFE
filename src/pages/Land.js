@@ -19,17 +19,6 @@ function LandPage() {
             });
     }, []);
 
-    const metadata = {
-        source: "https://rwandalanddashboard.lands.rw/",
-        lastUpdated: "2024-08-18",
-        description: "This dataset contains land-related information, including the size of land parcels and the number of parcels within various categories. The data is intended to provide insights into land distribution and usage.",
-        columns: [
-            { name: "category_name", description: "The name of the land category or type." },
-            { name: "size_in_ha", description: "The size of the land parcel in hectares." },
-            { name: "parcel_count", description: "The number of parcels in the land category." }
-        ],
-        notes: "Data is aggregated from the national land authority, Rwanda and may be subject to updates and corrections. Ensure to check the source for the most accurate and recent information."
-    };
 
     // Prepare data for pie charts
     const sizeInHaData = {
@@ -56,29 +45,15 @@ function LandPage() {
     }));
 
     return (
-        <div className="flex flex-col md:flex-row">
-            <main className="flex-1 p-4 md:p-6 lg:p-8">
-                <h1 className="text-2xl font-bold mb-4">Land Data</h1>
+        <div className="flex flex-col md:flex-row p-4">
+            <main className="flex-1">
+                <h1 className="text-xl sm:text-2xl font-bold md:mb-3 mt-10">Land Data</h1>
+                <p className="text-sm sm:text-base text-gray-400 mb-8">Land usage for Rwanda. This data is gotten from The Rwanda Land Authority</p>
 
-                {/* Metadata Section */}
-                <div className="bg-gray-100 p-4 rounded-md mb-8 shadow-md">
-                    <h2 className="text-xl font-semibold mb-2">Dataset Metadata</h2>
-                    <p><strong>Source:</strong> <a href={metadata.source} className="text-blue-500" target="_blank" rel="noopener noreferrer">{metadata.source}</a></p>
-                    <p><strong>Last Updated:</strong> {metadata.lastUpdated}</p>
-                    <p><strong>Description:</strong> {metadata.description}</p>
-                    <h3 className="text-lg font-semibold mt-4">Columns:</h3>
-                    <ul className="list-disc list-inside mt-2">
-                        {metadata.columns.map((column, index) => (
-                            <li key={index}><strong>{column.name}:</strong> {column.description}</li>
-                        ))}
-                    </ul>
-                    <p className="mt-4"><strong>Notes:</strong> {metadata.notes}</p>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                     <div className="w-full">
-                        <h2 className="text-xl font-semibold mb-2">Size in Ha</h2>
-                        <div className="relative h-[300px] md:h-[400px]">
+                        <h2 className="text-lg sm:text-xl font-semibold mb-2">Size in Ha</h2>
+                        <div className="relative h-[250px] sm:h-[300px] md:h-[400px]">
                             <Pie
                                 data={sizeInHaData}
                                 options={{
@@ -107,8 +82,8 @@ function LandPage() {
                         </div>
                     </div>
                     <div className="w-full">
-                        <h2 className="text-xl font-semibold mb-2">Parcel Count</h2>
-                        <div className="relative h-[300px] md:h-[400px]">
+                        <h2 className="text-lg sm:text-xl font-semibold mb-2">Parcel Count</h2>
+                        <div className="relative h-[250px] sm:h-[300px] md:h-[400px]">
                             <Pie
                                 data={parcelCountData}
                                 options={{
@@ -139,22 +114,22 @@ function LandPage() {
                 </div>
 
                 <div className="mb-8">
-                    <h2 className="text-xl font-semibold mb-2">Data Table</h2>
+                    <h2 className="text-lg sm:text-xl font-semibold mb-2">Data Table</h2>
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size (Ha)</th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parcel Count</th>
+                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Category Name</th>
+                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Size (Ha)</th>
+                                    <th className="px-4 py-3 text-left text-xs sm:text-sm font-medium text-gray-500 uppercase tracking-wider">Parcel Count</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {data.map(item => (
                                     <tr key={item.id}>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.category_name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.size_in_ha}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.parcel_count}</td>
+                                        <td className="px-4 py-4 whitespace-nowrap text-sm sm:text-base font-medium text-gray-900">{item.category_name}</td>
+                                        <td className="px-4 py-4 whitespace-nowrap text-sm sm:text-base text-gray-500">{item.size_in_ha}</td>
+                                        <td className="px-4 py-4 whitespace-nowrap text-sm sm:text-base text-gray-500">{item.parcel_count}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -162,14 +137,13 @@ function LandPage() {
                     </div>
                 </div>
 
-                <div className="flex gap-4">
+                <div className="flex flex-col sm:flex-row gap-4">
                     <CSVLink data={csvData} filename="land_data.csv" className="bg-green-900 text-white px-4 py-2 rounded">
                         Download CSV
                     </CSVLink>
                 </div>
             </main>
         </div>
-
     );
 }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 import logo from '../assets/logo.png';
 
 function Navbar() {
@@ -35,11 +36,13 @@ function Navbar() {
             {/* Navbar */}
             <nav className="bg-white shadow-md fixed top-0 left-0 w-full z-50">
                 <div className="mx-auto max-w-screen-xl px-5 py-7 flex items-center justify-between">
-                    <a href="#" className="text-lg font-semibold cursor-pointer flex items-center">
+                    <Link to="/" className="text-lg font-semibold cursor-pointer flex items-center"> {/* Change to Link */}
                         <img src={logo} alt="Logo" className="h-12 mr-2" />
-                    </a>
-                    <div className="text-green-900 text-sm md:text-md">
-                        <span>{formatDate(currentTime)}</span>
+                    </Link>
+                    <div className="text-green-900 text-sm md:text-md cursor-pointer"> {/* Added cursor-pointer */}
+                        <Link to="/admin"> {/* Wrap the date in a Link */}
+                            <span>{formatDate(currentTime)}</span>
+                        </Link>
                     </div>
                 </div>
             </nav>

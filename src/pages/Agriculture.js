@@ -4,6 +4,7 @@ import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 import { CSVLink } from 'react-csv';
 import { Helmet } from 'react-helmet';
+import MapComponent from '../components/Map';
 
 const AgriculturePage = () => {
     const [agricultureData, setAgricultureData] = useState([]);
@@ -50,7 +51,7 @@ const AgriculturePage = () => {
             .filter(year => parseInt(year) >= 1961) // Keep only years from 1961 onwards
         : [];
 
-    
+
     const calculateWorldData = () => {
         const yearTotals = {};
         const yearCounts = {};
@@ -73,8 +74,8 @@ const AgriculturePage = () => {
         return years.map(year => (yearCounts[year] > 0 ? (yearTotals[year] / yearCounts[year]) : 0));
     };
 
-    
-    
+
+
     const lineChartData = () => {
         const dataPoints = selectedCountry
             ? calculateCountryData() // Calculate for selected country
@@ -241,8 +242,8 @@ const AgriculturePage = () => {
             <Helmet>
                 <title>Agriculture Data</title>
             </Helmet>
-            <div className="flex flex-col md:flex-row">
-                <div className="flex-1 p-4 md:p-8">
+            <div className="w-full p-5 md:p-0">
+                <div className="flex-1">
                     <h1 className="text-2xl font-bold mb-4">Agricultural land (% of land area)</h1>
                     <p className='text-sm text-gray-400 mb-4'>Food and Agriculture Organization, electronic files and web site. This Dataset was gotten from World Bank</p>
 
@@ -280,7 +281,7 @@ const AgriculturePage = () => {
                                                     {activeGraph === 'map' && <span className="absolute left-0 bottom-[-5px] w-full h-[2px] bg-green-500" />}
                                                 </p>
                                             </div>
-                                            <div className="flex justify-between ml-4">
+                                            <div className="flex justify-between mb-4">
                                                 <button onClick={downloadGraph} className="mr-4 font-bold">
                                                     Download
                                                 </button>
@@ -289,15 +290,16 @@ const AgriculturePage = () => {
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="relative w-full h-[300px] md:h-[400px] lg:h-[500px] mb-4">
+                                        <div className="relative z-0 w-full h-[300px] md:h-[400px] lg:h-[500px] mb-4">
                                             {activeGraph === 'line' ? (
                                                 <Line ref={chartRef} data={lineChartData()} options={chartOptions} />
                                             ) : (
-                                                <div className="h-full flex justify-center items-center">
-                                                    <p className="text-gray-500">Map will be displayed here.</p>
+                                                <div className="h-full overflow-auto">
+                                                    <MapComponent theData={agricultureData} />
                                                 </div>
                                             )}
                                         </div>
+
                                     </div>
                                 </div>
                             )}
@@ -335,8 +337,8 @@ const AgriculturePage = () => {
 
 
                             <div className="mb-8">
-                                <h2 className="text-xl font-semibold mb-2">Data Table</h2>
-                                <div className="bg-white shadow-md rounded-lg p-4 max-w-4xl mx-auto">
+                                <h2 className="text-sm sm:text- overflow-x-hidden font-semibold mb-2 mt-5">Data Table</h2>
+                                <div className="bg-white shadow-md rounded-lg p-4 w-[450px] md:w-[500px] max-w-4xl mx-auto">
                                     <div className="overflow-x-auto">
                                         <div className="max-h-[400px] overflow-y-auto">
                                             <table className="min-w-full divide-y divide-gray-200">
