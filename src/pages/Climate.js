@@ -245,7 +245,7 @@ const ClimatePage = () => {
             <div className="w-full p-5 md:p-0">
                 <div className="flex-1">
                     <h1 className="text-xl sm:text-2xl font-bold md:mb-3 mt-10">Methane emissions (% change from 1990)</h1>
-                    <p className='text-sm sm:text-base text-gray-400 mb-8'>World Bank staff estimates from original source: European Commission, Joint Research Centre ( JRC )/Netherlands Environmental Assessment Agency ( PBL ). Emission Database for Global Atmospheric Research ( EDGAR ): edgar.jrc.ec.europa.eu.</p>
+                    <p className='text-sm sm:text-base text-gray-400 mb-8'>This Dataset was gotten from World Bank</p>
 
                     {error && <div className="text-red-500 mt-4">{error}</div>}
 
